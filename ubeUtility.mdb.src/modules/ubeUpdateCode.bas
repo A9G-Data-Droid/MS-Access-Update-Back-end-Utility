@@ -1,9 +1,17 @@
 Option Compare Database
 Option Explicit
-
+'
+' MS-Access Back End Update Utility by Peter Hibbs
+'
+'   Originally found at:
+'       http://www.rogersaccesslibrary.com/forum/back-end-update-utility_topic410.html
+'
+'   This branch is hosted at:
+'       https://github.com/A9G-Data-Droid/MS-Access-Update-Back-end-Utility
+'
 Public Const gRefTable As String = "Settings"             'defines name of the table in backend to hold the 'ubeVersion'
 
-'Const adhcErrObjectExists As Long = 3012                 'see adhGetProp, etc procedures
+Const adhcErrObjectExists As Long = 3012                 'see adhGetProp, etc procedures
 Const adhcErrNotInCollection As Long = 3270
 Const adhcErrInvalidType As Long = 30001
 
@@ -54,7 +62,7 @@ ErrorCode:
 End Property
 
 
-' Push a value in to a field, for a given record
+''' Push a value in to a field, for a given record
 Public Sub AddFieldDataToRecord(ByVal TableName As String, ByVal recordIDName As String, ByVal recordValue As String, ByVal FieldName As String, ByVal fieldValue As String)
     With backendDB.OpenRecordset(TableName, dbOpenDynaset)
         .FindFirst "[" & recordIDName & "] = '" & recordValue & "'"
@@ -71,13 +79,11 @@ Public Sub AddFieldDataToRecord(ByVal TableName As String, ByVal recordIDName As
 End Sub
 
 
-
+''' Update selected back-end file with required changes
+'''Entry  (vDeveloper) = TRUE if called from Update form, = FALSE if called from user start up form
+'''       (gRefTable) = Name of table in back-end file which holds the 'ubeVersion' reference field
+'''Exit   (UpdateBackEndFile) = False if error or True if OK
 Public Function UpdateBackEndFile(ByVal vDeveloper As Boolean) As Boolean
-
-    'Update selected back-end file with required changes
-    'Entry  (vDeveloper) = TRUE if called from Update form, = FALSE if called from user start up form
-    '       (gRefTable) = Name of table in back-end file which holds the 'ubeVersion' reference field
-    'Exit   (UpdateBackEndFile) = False if error or True if OK
 
     On Error GoTo ErrorCode
     
@@ -86,14 +92,16 @@ Public Function UpdateBackEndFile(ByVal vDeveloper As Boolean) As Boolean
     vVersion = beVersion
     
     'if User mode and updates available then
-    If vVersion < DMax("ID", "ubeUpdate") And vDeveloper = False Then
-        If MsgBox("WARNING: Your database back-end file requires an update. " _
-                & "Click Yes to continue or No to quit.", vbQuestion + vbYesNo, "Update Pending") = vbNo Then
-            Application.Quit
-        Else  ' vbYes
-            BackupDatabase GetBEDBPath
-            UpdateBackEndFile = SchemaUpdate(vVersion, vDeveloper)
+    If vVersion < DMax("ID", "ubeUpdate") Then
+        If vDeveloper = False Then
+            If MsgBox("WARNING: Your database back-end file requires an update. " _
+                    & "Click Yes to continue or No to quit.", vbQuestion + vbYesNo, "Update Pending") = vbNo Then
+                Application.Quit
+            End If
         End If
+        
+        BackupDatabase GetBEDBPath
+        UpdateBackEndFile = SchemaUpdate(vVersion, vDeveloper)
     End If
     
 ErrorCode:
@@ -128,7 +136,9 @@ Public Sub BackupDatabase(ByVal dbFullPath As String)
 End Sub
 
 
-
+''' Returns full path to the backend
+'''     Optionally will use the table cited to pick a specific back end by link
+'''     When no table is specified it uses the first linked table it finds
 Private Function GetBEDBPath(Optional ByVal knownTable As String = vbNullString) As String
 
     On Error GoTo ErrorCode
@@ -158,6 +168,7 @@ ErrorCode:
     End If
 End Function
 
+''' Returns a connection string using the name of a linked table passed in.
 Private Function GetConnectFromTable(ByVal knownTable As String) As String
 
     On Error GoTo ErrorCode
@@ -176,7 +187,9 @@ ErrorCode:
 End Function
 
 
-
+''' This is the main procedure that does all the work on the back end.
+'''     It will update the backend to the version passed in.
+'''     Needs to know if you are running in developer mode.
 Private Function SchemaUpdate(ByVal vVersion As Long, ByVal vDeveloper As Boolean) As Boolean
 
     On Error GoTo ErrorCode
@@ -194,10 +207,16 @@ Private Function SchemaUpdate(ByVal vVersion As Long, ByVal vDeveloper As Boolea
     Dim tdf As DAO.TableDef
     Dim fld As DAO.Field
     Do Until updateList.EOF                             'step thru list
-        DoCmd.OpenForm "ubeUpdating"             'show Updating Back End message
-        DoEvents
-        
         vID = updateList.Fields().Item("ID").Value                             'fetch ID for error message
+        
+        DoCmd.openForm "ubeUpdating"             'show Updating Back End message
+        With Forms.Item("ubeUpdating").Controls
+            .Item("ShowFileName").Caption = backendDB.Name
+            .Item("WaitLabel").Caption = "Step " & vID
+        End With
+        
+        DoEvents
+                
         Select Case updateList.Fields().Item("Action").Value                   'select Action type
         Case "Make Table"
             backendDB.Execute "CREATE TABLE [" & updateList.Fields().Item("TableName").Value & "] ([" & updateList.Fields().Item("FieldName").Value & "] " & updateList.Fields().Item("FieldType").Value & ")" 'create table with one field
@@ -208,14 +227,15 @@ Private Function SchemaUpdate(ByVal vVersion As Long, ByVal vDeveloper As Boolea
             SetProperties updateList.Fields().Item("TableName").Value, updateList.Fields().Item("FieldName").Value, Nz(updateList.Fields().Item("Constraint")), Nz(updateList.Fields().Item("Misc")), Nz(updateList.Fields().Item("Description")) 'set field property (if any)
 
         Case "Copy Table"
-            vTableName = updateList.Fields().Item("TableName").Value           'fetch table name
-            If TableExists("ube" & vTableName) = False Then 'if ube'Table' not exists then
-                DoCmd.CopyObject vPathname, , acTable, vTableName 'copy table to back-end file
-                DoCmd.Rename "ube" & vTableName, acTable, vTableName 'prefix table name with 'ube'
-                DoCmd.TransferDatabase acLink, "Microsoft Access", vPathname, acTable, vTableName, vTableName 'set link to new table
+            vTableName = updateList.Fields().Item("TableName").Value            'fetch table name
+            If TableExists("ube" & vTableName) = False Then                     'if ube'Table' not exists then
+                DoCmd.CopyObject vPathname, , acTable, vTableName               'copy table to back-end file
+                DoCmd.Rename "ube" & vTableName, acTable, vTableName            'prefix table name with 'ube'
+                'DoCmd.TransferDatabase acLink, "Microsoft Access", vPathname, acTable, vTableName, vTableName 'set link to new table
             Else                                 'if ube'Table' exists then
                 DoCmd.CopyObject vPathname, vTableName, acTable, "ube" & vTableName 'copy table to back-end and rename
             End If
+            
             If TableExists(vTableName) = True Then DoCmd.DeleteObject acTable, vTableName 'if link exists then delete Link
             DoCmd.TransferDatabase acLink, "Microsoft Access", vPathname, acTable, vTableName, vTableName 'and re-link to new table in BE
             backendDB.TableDefs.Refresh                 'refresh table collection
@@ -225,6 +245,7 @@ Private Function SchemaUpdate(ByVal vVersion As Long, ByVal vDeveloper As Boolea
             If TableExists("ube" & updateList.Fields().Item("TableName").Value) = True Then 'if ube'Table' exists then
                 thisDatabase.Execute "DROP TABLE [" & "ube" & updateList.Fields().Item("TableName").Value & "]" 'delete 'ube' table also
             End If
+            
             DoCmd.DeleteObject acTable, updateList.Fields().Item("TableName") 'and delete table Link
             backendDB.TableDefs.Refresh                 'refresh table collection
 
@@ -241,6 +262,7 @@ Private Function SchemaUpdate(ByVal vVersion As Long, ByVal vDeveloper As Boolea
                         tdf.RefreshLink          'and make link to back end
                     End If
                 Next tdf
+                
                 Set tdf = Nothing
             Else
                 If updateList.Fields().Item("FieldType").Value = "HYPERLINK" Then 'if field type = 'HYPERLINK'
@@ -254,6 +276,7 @@ Private Function SchemaUpdate(ByVal vVersion As Long, ByVal vDeveloper As Boolea
                     backendDB.Execute "ALTER TABLE [" & updateList.Fields().Item("TableName").Value & "] ADD [" & updateList.Fields().Item("FieldName").Value & "] " & updateList.Fields().Item("FieldType").Value 'add new field to table
                 End If
             End If
+            
             backendDB.TableDefs.Refresh                 'refresh table collection
             NewFieldDefaults updateList.Fields().Item("TableName").Value, updateList.Fields().Item("FieldName").Value, updateList.Fields().Item("FieldType").Value, Nz(updateList.Fields().Item("Description")) 'always set some properties
             SetProperties updateList.Fields().Item("TableName").Value, updateList.Fields().Item("FieldName").Value, Nz(updateList.Fields().Item("Constraint")), Nz(updateList.Fields().Item("Misc")), Nz(updateList.Fields().Item("Description")) 'set other field property (if any)
@@ -319,12 +342,10 @@ ErrorCode:
 End Function
 
 
-
+''' Checks if table exists
+'''     Entry  (vTableName) = Name of table
+'''     Exit   (TableExists) = True if table exists, = False if not
 Private Function TableExists(ByRef vTableName As String) As Boolean
-
-    'Checks if table exists
-    'Entry  (vTableName) = Name of table
-    'Exit   (TableExists) = True if table exists, = False if not
 
     On Error GoTo ErrorCode                      'trap error if next line fails
     
@@ -338,17 +359,15 @@ ErrorCode:
 End Function
 
 
-
+''' Checks if relation exists
+'''     Entry  (relationName) = Name of table
+'''     Exit   (RelationExists) = True if relation exists, = False if not
 Public Function RelationExists(ByRef relationName As String) As Boolean
-
-    'Checks if relation exists
-    'Entry  (relationName) = Name of table
-    'Exit   (RelationExists) = True if relation exists, = False if not
 
     On Error GoTo ErrorCode                      'trap error if next line fails
     
     ' try to read table name from TableDefs
-    RelationExists = (backendDB.Relations(relationName).Name = relationName)
+    RelationExists = (backendDB.Relations.Item(relationName).Name = relationName)
     Exit Function
 
 ErrorCode:
@@ -357,17 +376,15 @@ ErrorCode:
 End Function
 
 
-
-Private Function SetProperties(ByRef vTableName As String, ByRef vFieldName As String, ByVal vPropertyType As String, ByRef vParameters As String, ByRef vDescription As String) As Variant
-
-    'Change or add a field property
-    'Entry  (vTableName) = name of table to change
-    '       (vFieldName) = name of field to change
-    '       (vPropertyType) = name of field property to be changed (if NULL then just change Description property, if any)
-    '       (vParameters) = any required parameters (i.e. Field default value, New field name or Ordinal position, etc)
-    '       (vDescription) = text for description column of specified field or other data
-    'Exit   Specified property changed
-    '       Any errors handled by main UpdateBackEndFile routine
+'''Change or add a field property
+'''Entry  (vTableName) = name of table to change
+'''       (vFieldName) = name of field to change
+'''       (vPropertyType) = name of field property to be changed (if NULL then just change Description property, if any)
+'''       (vParameters) = any required parameters (i.e. Field default value, New field name or Ordinal position, etc)
+'''       (vDescription) = text for description column of specified field or other data
+'''Exit   Specified property changed
+'''       Any errors handled by main UpdateBackEndFile routine
+Private Sub SetProperties(ByRef vTableName As String, ByRef vFieldName As String, ByVal vPropertyType As String, ByRef vParameters As String, ByRef vDescription As String)
 
     Dim vStatus As Boolean
     Dim vR As Variant
@@ -430,21 +447,18 @@ Private Function SetProperties(ByRef vTableName As String, ByRef vFieldName As S
         vR = adhSetProp(backendDB.TableDefs.Item(vTableName).Fields.Item(vFieldName), "SmartTags", vParameters) 'set Smart Tags property
         vR = adhSetProp(backendDB.TableDefs.Item(vTableName).Fields.Item(vFieldName), "Description", vDescription) 'set Description field
     End Select
-    
-    SetProperties = vR
-End Function
+
+End Sub
 
 
-
+'''Fill a field with data for all records
+'''Entry  (vTableName) = name of table to fill
+'''       (vFieldName) = name of field to fill
+'''       (vParameter) = data to be copied to table
+'''       (db) = Database object referenced to back-end file
+'''Exit   Specified field in all records filled with specified value (Note. In Text/Memo fields any double quotes replaced with two single quotes)
+'''       Any errors handled by main UpdateBackEndFile routine
 Private Sub FillField(ByRef vTableName As String, ByRef vFieldName As String, ByRef vParameter As String)
-
-    'Fill a field with data for all records
-    'Entry  (vTableName) = name of table to fill
-    '       (vFieldName) = name of field to fill
-    '       (vParameter) = data to be copied to table
-    '       (db) = Database object referenced to back-end file
-    'Exit   Specified field in all records filled with specified value (Note. In Text/Memo fields any double quotes replaced with two single quotes)
-    '       Any errors handled by main UpdateBackEndFile routine
 
     Dim vFieldType As Long
     Dim vData As String
@@ -469,17 +483,15 @@ Private Sub FillField(ByRef vTableName As String, ByRef vFieldName As String, By
 End Sub
 
 
-
+'''Set some properties for new fields regardless
+'''Entry  (vTableName) = name of table to change
+'''       (vFieldName) = name of field to change
+'''       (vFieldType) = field property type
+'''       (vDescription) = text for description column of specified field
+'''       (db) = Database object referenced to back-end file
+'''Exit   Specified field properties set (delete any you don't want)
+'''       Any errors handled by main UpdateBackEndFile routine
 Private Sub NewFieldDefaults(ByRef vTableName As String, ByRef vFieldName As String, ByVal vFieldType As String, ByRef vDescription As String)
-
-    'Set some properties for new fields regardless
-    'Entry  (vTableName) = name of table to change
-    '       (vFieldName) = name of field to change
-    '       (vFieldType) = field property type
-    '       (vDescription) = text for description column of specified field
-    '       (db) = Database object referenced to back-end file
-    'Exit   Specified field properties set (delete any you don't want)
-    '       Any errors handled by main UpdateBackEndFile routine
 
     Dim vR As Variant
     Dim fld As DAO.Field
@@ -499,20 +511,21 @@ Private Sub NewFieldDefaults(ByRef vTableName As String, ByRef vFieldName As Str
 End Sub
 
 
-
+'''Set some properties for new fields regardless
+'''Entry  (vTableName) = name of table with indexed field
+'''       (vFieldName) = name of indexed field
+'''       (db) = Database object referenced to back-end file
+'''Exit   Index name for selected table/field returned or "" if none
+'''       Any errors handled by main UpdateBackEndFile routine
 Private Function FindIndex(ByRef vTableName As String, ByVal vFieldName As String) As String
-
-    'Set some properties for new fields regardless
-    'Entry  (vTableName) = name of table with indexed field
-    '       (vFieldName) = name of indexed field
-    '       (db) = Database object referenced to back-end file
-    'Exit   Index name for selected table/field returned or "" if none
-    '       Any errors handled by main UpdateBackEndFile routine
 
     Dim idx As DAO.Index
     Dim tdf As DAO.TableDef
-
-    Set tdf = backendDB.TableDefs.Item(vTableName)           'define required table
+    
+    With backendDB.TableDefs
+        Set tdf = .Item(vTableName)           'define required table
+    End With
+    
     For Each idx In tdf.Indexes                  'search Indexes
         If InStr(1, idx.Fields, "+" & vFieldName) > 0 Then 'if index field holds ("+" & field name) then
             FindIndex = idx.Name                 'fetch Index name and
@@ -523,18 +536,15 @@ Private Function FindIndex(ByRef vTableName As String, ByVal vFieldName As Strin
 End Function
 
 
-
+'''Create or change a relationship between two tables
+'''Entry  (vPKTableName) = Name of table for Primary Key
+'''       (vPKFieldName) = Name of Primary Key in primary table
+'''       (vFKTableName) = Name of table for Foreign Key
+'''       (vFKFieldName) = Name of Foreign Key field in Foreign table
+'''Exit   (CreateRelationship) = True if Relationship created or = False if error
 Private Function CreateRelationship(ByVal vPKTableName As String, ByVal vPKFieldName As String, ByVal vRelationshipType As String, ByVal vFKTableName As String, ByVal vFKFieldName As String) As Boolean
-
+    
     ' From Access 2000 Developer's Handbook by Litwin, Getz, Gilbert (Sybex) Copyright 1999.  All rights reserved.
-
-    'Create or change a relationship between two tables
-    'Entry  (vPKTableName) = Name of table for Primary Key
-    '       (vPKFieldName) = Name of Primary Key in primary table
-    '       (vFKTableName) = Name of table for Foreign Key
-    '       (vFKFieldName) = Name of Foreign Key field in Foreign table
-    'Exit   (CreateRelationship) = True if Relationship created or = False if error
-
     Dim rel As DAO.Relation
     Dim fld As DAO.Field
     Dim vRelationshipName As String
@@ -569,7 +579,7 @@ Private Function CreateRelationship(ByVal vPKTableName As String, ByVal vPKField
         Dim existingFields As Object
         Set existingFields = CreateObject("Scripting.Dictionary")
         Dim aField As Field
-        For Each aField In backendDB.Relations(vRelationshipName).Fields
+        For Each aField In backendDB.Relations.Item(vRelationshipName).Fields
             existingFields.Add aField.Name, aField.ForeignName
         Next aField
         
@@ -614,17 +624,15 @@ CreateRelationship_Err:
 End Function
 
 
-
+'''Delete a relationship between two tables
+'''Entry  (vPKTableName) = Name of table for Primary Key
+'''       (vPKFieldName) = Name of Primary Key in primary table
+'''       (vFKTableName) = Name of table for Foreign Key
+'''       (vFKFieldName) = Name of Foreign Key field in Foreign table
+'''       (db) = Database object referenced to back-end file
+'''Exit   Relationship deleted
+'''       Any errors handled by main UpdateBackEndFile routine
 Private Sub DeleteRelationship(ByVal vPKTableName As String, ByVal vPKFieldName As String, ByVal vFKTableName As String, ByVal vFKFieldName As String)
-
-    'Delete a relationship between two tables
-    'Entry  (vPKTableName) = Name of table for Primary Key
-    '       (vPKFieldName) = Name of Primary Key in primary table
-    '       (vFKTableName) = Name of table for Foreign Key
-    '       (vFKFieldName) = Name of Foreign Key field in Foreign table
-    '       (db) = Database object referenced to back-end file
-    'Exit   Relationship deleted
-    '       Any errors handled by main UpdateBackEndFile routine
 
     Dim selectedRelation As DAO.Recordset
 
@@ -687,30 +695,24 @@ End Sub
 'End Function
 
 
-
+''' Set the value of a property. If it's not there, attemp to append it to the collection of properties.
+''' Returns the previous value of the property, or an error value.
+''' (use IsError() to check) if there was a problem.
+''
+''' In:
+'''    obj: An object reference
+'''       (db.TableDefs("tblCustomers"), for example)
+'''    strName: Name for the property to set
+'''    varValue: value for the property
+''' Out:
+'''    Return value:
+'''      If an error occurred, an error value (use IsError() to check)
+'''      If not, the old value of the property.
 Private Function adhSetProp(ByVal obj As Object, ByRef strName As String, ByRef varValue As Variant) As Variant
     
     ' From Access 2000 Developer's Handbook
     ' by Getz, Litwin, and Gilbert (Sybex)
     ' Copyright 1999.  All rights reserved.
-
-    ' Set the value of a property.
-    ' If it's not there, attemp to append it to the
-    ' collection of properties.
-    ' Guess on the data type based on the value passed in.
-    ' Returns the previous value of the property, or an error value
-    ' (use IsError() to check) if there was a problem.
-
-    ' In:
-    '    obj: An object reference
-    '       (db.TableDefs("tblCustomers"), for example)
-    '    strName: Name for the property to set
-    '    varValue: value for the property
-    ' Out:
-    '    Return value:
-    '      If an error occurred, an error value (use IsError() to check)
-    '      If not, the old value of the property.
-          
     Dim varOldValue As Variant
     Dim varRetval As Variant
     
@@ -720,39 +722,30 @@ Private Function adhSetProp(ByVal obj As Object, ByRef strName As String, ByRef 
     obj.Properties(strName) = varValue
     adhSetProp = varOldValue
     
-adhSetPropExit:
-    Exit Function
-    
 adhSetProp_Err:
     Select Case Err.Number
     Case adhcErrNotInCollection
         varRetval = AddProp(obj, strName, varValue)
         If IsError(varRetval) Then
             adhSetProp = varRetval
-            Resume adhSetPropExit
         Else
             Resume Next
         End If
     Case Else
         adhSetProp = CVErr(Err.Number)
-        Resume adhSetPropExit
     End Select
 
 End Function
 
 
-
+''' Attempt to add a property to obj.
+''' If this succeeds, it returns True. If not, it returns an error, which the caller should
+''' check for with IsError().
 Private Function AddProp(ByVal obj As Object, ByRef strName As String, ByRef varValue As Variant) As Variant
     
     ' From Access 2000 Developer's Handbook
     ' by Litwin, Getz, and Gilbert (Sybex)
     ' Copyright 1999.  All rights reserved.
-
-    ' Attempt to add a property to obj.
-    ' If this succeeds, it returns True.
-    ' If not, it returns an error, which the caller should
-    ' check for with IsError().
-
     Dim varRetval As Variant
     Dim prp As DAO.Property
     
@@ -781,19 +774,16 @@ AddProp_Err:
 End Function
 
 
-
+''' Return the DAO type corresponding to the VarType
+''' of the variant value passed in. If there's no
+''' correspondence, return the user-defined error
+''' adhcErrInvalidType.  Use IsErr() to check that out
+''' in the caller.
 Private Function adhGetDAOType(ByRef varValue As Variant) As Variant
     
     ' From Access 2000 Developer's Handbook
     ' by Litwin, Getz, Gilbert (Sybex)
     ' Copyright 1999.  All rights reserved.
-
-    ' Return the DAO type corresponding to the VarType
-    ' of the variant value passed in. If there's no
-    ' correspondence, return the user-defined error
-    ' adhcErrInvalidType.  Use IsErr() to check that out
-    ' in the caller.
-
     Dim intType As Long
     
     On Error GoTo GetDAOType_Err
@@ -825,7 +815,6 @@ Private Function adhGetDAOType(ByRef varValue As Variant) As Variant
         ' No way to store arrays! Trigger a runtime error.
         Err.Raise adhcErrInvalidType
     End Select
-    
     adhGetDAOType = intType
     
 GetDAOType_Exit:
@@ -838,20 +827,17 @@ GetDAOType_Err:
 End Function
 
 
-
+''' Create a new primary key and its index for a table. If the table already has a primary key, remove it.
+''' In:
+'''     strTableName: name of the table with which to work
+'''     strKeyName: name of the index to create
+'''     varFields: one or more fields passed as a list of strings to add to the collection of fields in the index.
+'''     db Database referenced elsewhere
+''' Out:
+'''     Return value: True on success, False otherwise.
 Private Function adhCreatePrimaryKey(ByRef strTableName As String, ByVal strKeyName As String, ByVal strFields As String) As Boolean
     
     ' From Access 2000 Developer's Handbook by Litwin, Getz, and Gilbert (Sybex) Copyright 1999.  All rights reserved.
-
-    ' Create a new primary key and its index for a table. If the table already has a primary key, remove it.
-    ' In:
-    '     strTableName: name of the table with which to work
-    '     strKeyName: name of the index to create
-    '     varFields: one or more fields passed as a list of strings to add to the collection of fields in the index.
-    '     db Database referenced elsewhere
-    ' Out:
-    '     Return value: True on success, False otherwise.
-
     Dim idx As DAO.Index
     Dim tdf As DAO.TableDef
     Dim varPK As Variant
@@ -900,14 +886,11 @@ CreatePrimaryKey_Err:
 End Function
 
 
-
+''' Given a particular tabledef, find the primary key name, if it exists.
+''' Return the name of the primary key's index, if it exists, or Null if there wasn't a primary key.
 Private Function FindPrimaryKey(ByVal tdf As DAO.TableDef) As Variant
 
     ' From Access 2000 Developer's Handbook by Litwin, Getz, and Gilbert (Sybex) Copyright 1999.  All rights reserved.
-
-    ' Given a particular tabledef, find the primary key name, if it exists.
-    ' Return the name of the primary key's index, if it exists, or Null if there wasn't a primary key.
-
     Dim idx As DAO.Index
 
     For Each idx In tdf.Indexes
@@ -922,14 +905,11 @@ Private Function FindPrimaryKey(ByVal tdf As DAO.TableDef) As Variant
 End Function
 
 
-
+''' Given an index object, and a field name, add the field to the index.
+''' Return True on success, False otherwise.
 Private Function AddField(ByVal idx As DAO.Index, ByVal varIdx As Variant) As Boolean
     
     ' From Access 2000 Developer's Handbook by Litwin, Getz, Gilbert (Sybex) Copyright 1999.  All rights reserved.
-
-    ' Given an index object, and a field name, add the field to the index.
-    ' Return True on success, False otherwise.
-
     Dim fld As DAO.Field
     
     On Error GoTo AddIndex_Err
@@ -937,6 +917,7 @@ Private Function AddField(ByVal idx As DAO.Index, ByVal varIdx As Variant) As Bo
         Set fld = idx.CreateField(varIdx)
         idx.Fields.Append fld
     End If
+    
     AddField = True
     
 AddIndex_Exit:
@@ -949,16 +930,14 @@ AddIndex_Err:
 End Function
 
 
-
+'''Purpose:   Set a property for an object, creating if necessary. (Supplied by Allen Browne)
+'''Arguments: obj = the object whose property should be set.
+'''           strPropertyName = the name of the property to set.
+'''           intType = the type of property (needed for creating)
+'''           varValue = the value to set this property to.
+'''           strErrMsg = string to append any error message to.
 Private Function SetPropertyDAO(ByVal obj As Object, ByRef strPropertyName As String, ByRef intType As Long, ByRef varValue As Variant, Optional ByRef strErrMsg As String) As Boolean
-    
-    'Purpose:   Set a property for an object, creating if necessary. (Supplied by Allen Browne)
-    'Arguments: obj = the object whose property should be set.
-    '           strPropertyName = the name of the property to set.
-    '           intType = the type of property (needed for creating)
-    '           varValue = the value to set this property to.
-    '           strErrMsg = string to append any error message to.
-    
+
     On Error GoTo ErrHandler
 
     If HasProperty(obj, strPropertyName) Then
@@ -979,10 +958,8 @@ ErrHandler:
 End Function
 
 
-
+'Purpose:   Return true if the object has the property. (Supplied by Allen Browne)
 Private Function HasProperty(ByVal obj As Object, ByRef strPropName As String) As Boolean
-
-    'Purpose:   Return true if the object has the property. (Supplied by Allen Browne)
 
     On Error Resume Next
     
@@ -994,12 +971,12 @@ Private Function HasProperty(ByVal obj As Object, ByRef strPropName As String) A
 End Function
 
 
-
+'''Add the specified reference table to the back-end file
+'''Entry  (vRefTable) = name of table to add
+'''Exit   (AddReferenceTable) = True if add table was successful
 Private Function AddReferenceTable(ByRef vRefTable As String) As Boolean
-
-    'Add the specified reference table to the back-end file
-    'Entry  (vRefTable) = name of table to add
-    'Exit   (AddReferenceTable) = True if add table was successful
+    
+    On Error GoTo ErrorCode
     
     Dim bePathname As String
     bePathname = GetBEDBPath
@@ -1018,5 +995,7 @@ Private Function AddReferenceTable(ByRef vRefTable As String) As Boolean
     
     'thisDatabase.Execute "INSERT INTO [" & vRefTable & "] (ubeVersion) VALUES (0)"                 'add one record, set ubeVersion = 0
     AddReferenceTable = True                     'update succeeded
+    
+ErrorCode:
 
 End Function

@@ -1,5 +1,5 @@
-Version =19
-VersionRequired =19
+﻿Version =21
+VersionRequired =20
 Begin Form
     AutoCenter = NotDefault
     NavigationButtons = NotDefault
@@ -13,10 +13,8 @@ Begin Form
     Width =14193
     DatasheetFontHeight =10
     ItemSuffix =25
-    Left =1515
-    Top =225
-    Right =15990
-    Bottom =8805
+    Right =16485
+    Bottom =11010
     DatasheetGridlinesColor =12632256
     OrderBy ="ID"
     RecSrcDt = Begin
@@ -35,6 +33,9 @@ Begin Form
     End
     OnGotFocus ="[Event Procedure]"
     OnLoad ="[Event Procedure]"
+    FilterOnLoad =0
+    AllowLayoutView =0
+    DatasheetGridlinesColor12 =12632256
     Begin
         Begin Label
             BackStyle =0
@@ -47,6 +48,7 @@ Begin Form
             FontWeight =400
             ForeColor =-2147483630
             FontName ="Tahoma"
+            BorderLineStyle =0
         End
         Begin TextBox
             FELineBreak = NotDefault
@@ -56,6 +58,7 @@ Begin Form
             Width =1701
             LabelX =-1701
             FontName ="Tahoma"
+            AsianLineBreak =255
         End
         Begin ComboBox
             SpecialEffect =2
@@ -159,11 +162,13 @@ Begin Form
                     Left =13281
                     Top =60
                     Width =800
+                    ColumnOrder =0
                     FontWeight =700
                     ForeColor =255
                     Name ="txtLastRef"
                     AfterUpdate ="[Event Procedure]"
                     OnKeyPress ="[Event Procedure]"
+
                     Begin
                         Begin Label
                             OverlapFlags =85
@@ -188,10 +193,12 @@ Begin Form
                     Left =7186
                     Top =60
                     Width =2750
+                    ColumnOrder =1
                     TabIndex =1
                     ForeColor =65535
                     Name ="txtDate"
                     Format ="d mmmm yyyy"
+
                     Begin
                         Begin Label
                             OverlapFlags =85
@@ -236,6 +243,7 @@ Begin Form
                     ControlSource ="Misc"
                     StatusBarText ="Other required information"
                     AfterUpdate ="[Event Procedure]"
+
                 End
                 Begin ComboBox
                     LimitToList = NotDefault
@@ -254,6 +262,7 @@ Begin Form
                     RowSource ="AUTOINCREMENT;TEXT;DATETIME;BYTE;SHORT;LONG;SINGLE;DOUBLE;CURRENCY;YESNO;MEMO;OL"
                         "EOBJECT;HYPERLINK;ATTACHMENT"
                     StatusBarText ="Type of field"
+
                 End
                 Begin ComboBox
                     LimitToList = NotDefault
@@ -275,6 +284,7 @@ Begin Form
                     ValidationRule ="Is Not Null"
                     ValidationText ="There must be some action code"
                     AfterUpdate ="[Event Procedure]"
+
                 End
                 Begin ComboBox
                     LimitToList = NotDefault
@@ -291,6 +301,7 @@ Begin Form
                     RowSourceType ="Value List"
                     StatusBarText ="Field property"
                     AfterUpdate ="[Event Procedure]"
+
                 End
                 Begin TextBox
                     Enabled = NotDefault
@@ -305,6 +316,7 @@ Begin Form
                     BorderColor =4210752
                     Name ="ID"
                     ControlSource ="ID"
+
                 End
                 Begin TextBox
                     SpecialEffect =0
@@ -318,6 +330,7 @@ Begin Form
                     Name ="Description"
                     ControlSource ="Description"
                     StatusBarText ="Description of field"
+
                 End
                 Begin TextBox
                     Visible = NotDefault
@@ -331,6 +344,7 @@ Begin Form
                     Name ="ChangeDate"
                     ControlSource ="ChangeDate"
                     StatusBarText ="Date update made"
+
                 End
                 Begin ComboBox
                     RowSourceTypeInt =1
@@ -346,6 +360,7 @@ Begin Form
                     RowSourceType ="Value List"
                     StatusBarText ="Name of table, query, procedure or Macro to add, delete, alter"
                     AfterUpdate ="[Event Procedure]"
+
                 End
                 Begin ComboBox
                     RowSourceTypeInt =1
@@ -359,6 +374,7 @@ Begin Form
                     ControlSource ="FieldName"
                     RowSourceType ="Value List"
                     StatusBarText ="Name of field to add, delete, alter"
+
                 End
             End
         End
@@ -378,6 +394,11 @@ Begin Form
                     Caption ="Cancel"
                     OnClick ="[Event Procedure]"
                     ControlTipText ="Close form"
+
+                    WebImagePaddingLeft =4
+                    WebImagePaddingTop =4
+                    WebImagePaddingRight =3
+                    WebImagePaddingBottom =3
                 End
                 Begin CommandButton
                     OverlapFlags =85
@@ -390,6 +411,11 @@ Begin Form
                     Caption ="Update Back End"
                     OnClick ="[Event Procedure]"
                     ControlTipText ="Update back-end file with new data"
+
+                    WebImagePaddingLeft =4
+                    WebImagePaddingTop =4
+                    WebImagePaddingRight =3
+                    WebImagePaddingBottom =3
                 End
                 Begin CommandButton
                     OverlapFlags =85
@@ -402,6 +428,11 @@ Begin Form
                     Caption ="Add New Item"
                     OnClick ="[Event Procedure]"
                     ControlTipText ="Add new object or instruction to list"
+
+                    WebImagePaddingLeft =4
+                    WebImagePaddingTop =4
+                    WebImagePaddingRight =3
+                    WebImagePaddingBottom =3
                 End
                 Begin Label
                     OverlapFlags =85
@@ -445,11 +476,11 @@ Option Explicit
 'Getz, Litwin and Gilbert (for writing the Access 2000 Developers Handbook)
 'Dirk Goldgar and Allen Browne for help with Relationships code
 
-' Copy this line of code into the Open event of your Start Up form
-' See Word documentation if using Access 2007 (.accdb mode)
+' Copy this line of code into the Open event of your Start Up form or Autoexec
+'
 '       UpdateBackEndFile(False)
 
-Private Const VersionLine As String = "Version 2.0     2020-03-23     by  Peter  D  Hibbs"
+Private Const VersionLine As String = "Version 2.0"
 
 
 Private Sub Form_Load()
@@ -467,7 +498,7 @@ Private Sub Form_Open(Cancel As Integer)
     On Error GoTo ErrorCode
 
     Me.txtLastRef = beVersion                       'display last used Ref number from Reference table
-    ButtonCheck                                  'enable Update button (if reqd)
+    ButtonCheck                                     'enable Update button (if reqd)
 
 ErrorCode:
     If Err.Number > 0 Then
@@ -478,14 +509,13 @@ End Sub
 
 
 
-'@Ignore ProcedureNotUsed, IntegerDataType
+'@Ignore ProcedureCanBeWrittenAsFunction
 Private Sub txtLastRef_KeyPress(ByRef KeyAscii As Integer)
     If Chr$(KeyAscii) Like "[!0-9]" And KeyAscii <> vbKeyBack Then KeyAscii = 0 'allow keys 0-9 only
 End Sub
 
 
 
-'@Ignore ProcedureNotUsed
 Private Sub Action_AfterUpdate()
 
     On Error GoTo ErrorCode
@@ -549,12 +579,10 @@ ErrorCode:
 End Sub
 
 
-
+''' start new record and move cursor to Action field
 Private Sub btnAddNew_Click()
-
-    DoCmd.GoToRecord , , acNewRec                'start new record and
-    Me.Action.SetFocus                              'move cursor to Action field
-
+    DoCmd.GoToRecord , , acNewRec
+    Me.Action.SetFocus
 End Sub
 
 
@@ -688,7 +716,7 @@ End Sub
 Private Sub Form_Dirty(Cancel As Integer)
 
     If Nz(Me.Action) = vbNullString Then Me.Action.SetFocus 'if Action field left blank then move cursor back
-    Me.lblOK.Visible = False                        'hide message label (if visible)
+    Me.lblOK.Visible = False                                'hide message label (if visible)
 
 End Sub
 
@@ -710,41 +738,33 @@ Private Sub Misc_AfterUpdate()
 End Sub
 
 
-
+''' add field names for selected table (if any) to field list
 Private Sub TableName_AfterUpdate()
-    Me.FieldName.RowSource = FetchFieldList(Me.TableName) 'add field names for selected table (if any) to field list
+    Me.FieldName.RowSource = FetchFieldList(Me.TableName)
 End Sub
 
 
-
+''' If Developer changes LastRef field manually then
 Private Sub txtLastRef_AfterUpdate()
 
-    'If Developer changes LastRef field manually then
-    
     'update ubeVersion field to new value
     ubeUpdateCode.beVersion = Me.txtLastRef
-    'CurrentDb.Execute "UPDATE [" & gRefTable & "] SET ubeVersion = " & txtLastRef
     
     Me.lblOK.Visible = False                        'hide message label (if visible)
-    ButtonCheck                                  'and enable Update button (if reqd)
+    ButtonCheck                                     'and enable Update button (if reqd)
 
 End Sub
 
 
-
+''' Check if all updates have been done and enable/disable Update btn accordingly
 Private Sub ButtonCheck()
-
-    'Check if all updates have been done and enable/disable Update btn accordingly
-
     Me.btnUpdate.Enabled = Nz(DMax("ID", "ubeUpdate")) > Val(Me.txtLastRef)
-
 End Sub
 
 
 
+''' Changes list of options in Constraint drop-down if 'Set Relationships' action selected
 Private Sub SetConstraintSource()
-
-    'Changes list of options in Constraint drop-down if 'Set Relationships' action selected
 
     If Me.Action = "Set Relationship" Then          'if record Action = SetRelationship then
         Me.Constraint.RowSource = "1-1 Not Enforced;" _
@@ -781,12 +801,10 @@ Private Sub SetConstraintSource()
 End Sub
 
 
-
+'''Returns list of local tables, linked tables or action queries
+'''Entry  (vType) = Type of list requested (1=Local Tables, 2=Linked tables, 3=Action Queries)
+'''Exit   FetchObjectList = List of specified objects (delimited with ;)
 Private Function FetchObjectList(ByVal vType As Long) As String
-
-    'Returns list of local tables, linked tables or action queries
-    'Entry  (vType) = Type of list requested (1=Local Tables, 2=Linked tables, 3=Action Queries)
-    'Exit   FetchObjectList = List of specified objects (delimited with ;)
 
     Dim localDB As DAO.Database
     Dim tdf As TableDef
@@ -829,13 +847,11 @@ Private Function FetchObjectList(ByVal vType As Long) As String
 End Function
 
 
-
+'''Returns list of fields in specified table
+'''Entry  (vTable) = Name of table
+'''Exit   FetchFieldList = List of field names in table ( delimited with ; )
 Private Function FetchFieldList(ByVal vTable As String) As String
-
-    'Returns list of fields in specified table
-    'Entry  (vTable) = Name of table
-    'Exit   FetchFieldList = List of field names in table (delimited with ;)
-    
+   
     Dim localDB As DAO.Database
     Dim tdf As DAO.TableDef
     Dim fld As DAO.Field
@@ -859,8 +875,8 @@ ErrorCode:
     If Err.Number = 3265 Then
         Set localDB = Nothing
         ' if table does not exist then exit with ""
-    Else
-        MsgBox Err.Description
+    ElseIf Err.Number <> 0 Then
+        MsgBox Err.Description, vbCritical, "ERROR: " & Err.Number
     End If
 
 End Function
