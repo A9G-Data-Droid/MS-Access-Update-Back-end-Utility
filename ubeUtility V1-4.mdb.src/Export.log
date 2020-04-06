@@ -1,0 +1,50 @@
+-------------------------------
+Beginning Export of all Source
+ubeUtility V1-4.mdb
+VCS Version 1.2.0.19
+4/6/2020 8:23:35 AM
+-------------------------------
+Exporting queries...    
+[0]
+-------------------------------
+Exporting forms...      
+  ubeUpdating
+    Sanitized in 0.34 seconds.
+  ubeForm
+    Sanitized in 0.43 seconds.
+[2]
+-------------------------------
+Exporting reports...    
+[0]
+-------------------------------
+Exporting macros...     
+  AutoKeys
+    Sanitized in 0.32 seconds.
+[1]
+-------------------------------
+Exporting modules...    
+  ubeUpdateCode
+[1]
+-------------------------------
+Exporting references... 
+  VBA 4.2
+  Access 9.0
+  DAO 5.0
+  [MSAccessVCS]
+[4]
+-------------------------------
+Exporting properties... 
+[19]
+-------------------------------
+Exporting specs...      
+[0]
+-------------------------------
+Exporting tbldef...     
+  ubeUpdate (with SQL)
+  ubeUpdate
+[1]
+-------------------------------
+Exporting relations...  
+[0]
+-------------------------------
+Done. (6.38 seconds)

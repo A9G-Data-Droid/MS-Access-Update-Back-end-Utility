@@ -1,0 +1,19 @@
+Connect??12
+Transactions?True?1
+Updatable?True?1
+CollatingOrder?1033?3
+QueryTimeout?60?3
+Version?4.0?12
+RecordsAffected?0?4
+ReplicaID??15
+DesignMasterID??15
+Connection??0
+AccessVersion?08.50?10
+Build?1129?4
+ProjVer?141?3
+NavPane Closed?0?4
+NavPane Width?215?4
+NavPane Category?0?4
+NavPane View By?0?4
+NavPane Sort By?1?4
+Show Navigation Pane Search Bar?0?4
