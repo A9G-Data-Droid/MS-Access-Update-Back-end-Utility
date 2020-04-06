@@ -178,7 +178,7 @@ your back-end file will be updated with the new data. While the update
 is taking place a message box is displayed on screen as shown in Fig 1
 below.
 
-![](media/image1.png){width="2.875in"
+![](img/FIG1.png){width="2.875in"
 height="1.0104166666666667in"}Usually this form will disappear very
 quickly but if a Query or Procedure takes a long time to execute the
 client (and you) will see that something is happening. Also the cursor
@@ -212,7 +212,7 @@ table) will also be made in his back-end file from the
 your client first opens the database and there are updates to be made, a
 warning message is displayed as shown in Fig 2 below.
 
-![](media/image2.png){width="6.125in" height="0.9895833333333334in"}
+![](img/FIG2.png){width="6.125in" height="0.9895833333333334in"}
 
 **Fig 2**. Warning message shown to client before updates.
 
@@ -221,7 +221,7 @@ normal, if he clicks **No** the database program will exit so that the
 back-end file can be backed up using Windows or some other back up
 application.
 
-![](media/image3.png){width="6.75in" height="4.125in"}
+![](img/FIG3.png){width="6.75in" height="4.125in"}
 
 **Fig 3**. Example of changing various fields and tables in the
 **Northwind** database.
@@ -737,7 +737,7 @@ this name). Now open the ubeForm using the short-cut keys (or whatever
 means you have chosen) and you will see the message shown below in **Fig
 4**.
 
-![](media/image4.png){width="5.333333333333333in"
+![](img/FIG4.png){width="5.333333333333333in"
 height="1.0763888888888888in"}
 
 **Fig 4.** Add new table to back-end file warning message.
