@@ -13,10 +13,10 @@ Begin Form
     Width =14193
     DatasheetFontHeight =10
     ItemSuffix =25
-    Left =1455
-    Top =1065
-    Right =17220
-    Bottom =10590
+    Left =1515
+    Top =225
+    Right =15990
+    Bottom =8805
     DatasheetGridlinesColor =12632256
     OrderBy ="ID"
     RecSrcDt = Begin
@@ -29,6 +29,10 @@ Begin Form
     AfterUpdate ="[Event Procedure]"
     OnOpen ="[Event Procedure]"
     DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
     OnGotFocus ="[Event Procedure]"
     OnLoad ="[Event Procedure]"
     Begin
@@ -405,8 +409,8 @@ Begin Form
                     Width =3735
                     Height =240
                     ForeColor =16777215
-                    Name ="Label15"
-                    Caption ="Version 1.4     January 2018     by  Peter  D  Hibbs"
+                    Name ="VersionLabel"
+                    Caption ="Version 1.3     February 2010     by  Peter  D  Hibbs"
                     OnClick ="[Event Procedure]"
                 End
                 Begin Label
@@ -441,365 +445,420 @@ Option Explicit
 'Getz, Litwin and Gilbert (for writing the Access 2000 Developers Handbook)
 'Dirk Goldgar and Allen Browne for help with Relationships code
 
-'Copy this line of code into the Open event of your Start Up form
-'See Word documentation if using Access 2007 (.accdb mode)
-'       Call UpdateBackEndFile(False)
+' Copy this line of code into the Open event of your Start Up form
+' See Word documentation if using Access 2007 (.accdb mode)
+'       UpdateBackEndFile(False)
 
-Private Sub Action_AfterUpdate()
+Private Const VersionLine As String = "Version 2.0     2020-03-23     by  Peter  D  Hibbs"
+
+
+Private Sub Form_Load()
+    With Me
+        .OrderByOn = True
+        .btnClose.SetFocus
+        .VersionLabel.Caption = VersionLine
+    End With
+End Sub
+
+
+
+Private Sub Form_Open(Cancel As Integer)
 
     On Error GoTo ErrorCode
 
-    TableName = "": FieldName = "": Constraint = "": Misc = "": FieldType = "": Description = ""            'clear all fields first
+    Me.txtLastRef = beVersion                       'display last used Ref number from Reference table
+    ButtonCheck                                  'enable Update button (if reqd)
+
+ErrorCode:
+    If Err.Number > 0 Then
+        MsgBox "ERROR: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Unhandled exception"
+    End If
+
+End Sub
+
+
+
+'@Ignore ProcedureNotUsed, IntegerDataType
+Private Sub txtLastRef_KeyPress(ByRef KeyAscii As Integer)
+    If Chr$(KeyAscii) Like "[!0-9]" And KeyAscii <> vbKeyBack Then KeyAscii = 0 'allow keys 0-9 only
+End Sub
+
+
+
+'@Ignore ProcedureNotUsed
+Private Sub Action_AfterUpdate()
+
+    On Error GoTo ErrorCode
     
-    SetConstraintSource                                                                                     'change options in Constraint drop-down
-    Select Case Action                                                                                      'select Action type and fill in reqd fields
-        Case "Make Table"
-            TableName = "(Table Name)": FieldName = "(Field Name)": FieldType = "(Field Type)": Description = "(Field Description - Optional)"
-        Case "Copy Table"
-            TableName = "(Table Name)"
-            TableName.RowSource = FetchObjectList(1)
-        Case "Remove Table"
-            TableName = "(Table Name)"
-            TableName.RowSource = FetchObjectList(2)
-        Case "New Field"
-            TableName = "(Table Name)": FieldName = "(Field Name)": FieldType = "(Field Type)": Description = "(Field Description - Optional)"
-            TableName.RowSource = FetchObjectList(2)
-        Case "Delete Field"
-            TableName = "(Table Name)": FieldName = "(Field Name)"
-            TableName.RowSource = FetchObjectList(2)
-        Case "Change Type"
-            TableName = "(Table Name)": FieldName = "(Field Name)": FieldType = "(Field Type)"
-            TableName.RowSource = FetchObjectList(2)
-        Case "Set Property"
-            TableName = "(Table Name)": FieldName = "(Field Name)": Constraint = "(Property)"
-            TableName.RowSource = FetchObjectList(2)
-        Case "Set Relationship"
-            TableName = "(PK Table Name)": FieldName = "(PK Field Name)": Constraint = "(Relationship Type)": Misc = "(FK Table Name)": Description = "(FK Field Name)"
-            TableName.RowSource = FetchObjectList(2)
-        Case "Clear Relationship"
-            TableName = "(Table Name)": FieldName = "(Field Name)": Misc = "(Table Name)": Description = "(Field Name)"
-            TableName.RowSource = FetchObjectList(2)
-        Case "Run Query"
-            TableName = "(Query Name)"
-            TableName.RowSource = FetchObjectList(3)
-        Case "Execute Code"
-            TableName = "(Procedure Name)"
-        Case "Run Macro"
-            TableName = "(Macro Name)"
+    ' clear all fields
+    With Me
+        .TableName = vbNullString
+        .FieldName = vbNullString
+        .Constraint = vbNullString
+        .Misc = vbNullString
+        .FieldType = vbNullString
+        .Description = vbNullString
+    End With
+    
+    SetConstraintSource                          'change options in Constraint drop-down
+    Select Case Me.Action                           'select Action type and fill in reqd fields
+    Case "Make Table"
+        Me.TableName = "(Table Name)": Me.FieldName = "(Field Name)": Me.FieldType = "(Field Type)": Me.Description = "(Field Description - Optional)"
+    Case "Copy Table"
+        Me.TableName = "(Table Name)"
+        Me.TableName.RowSource = FetchObjectList(1)
+    Case "Remove Table"
+        Me.TableName = "(Table Name)"
+        Me.TableName.RowSource = FetchObjectList(2)
+    Case "New Field"
+        Me.TableName = "(Table Name)": Me.FieldName = "(Field Name)": Me.FieldType = "(Field Type)": Me.Description = "(Field Description - Optional)"
+        Me.TableName.RowSource = FetchObjectList(2)
+    Case "Delete Field"
+        Me.TableName = "(Table Name)": Me.FieldName = "(Field Name)"
+        Me.TableName.RowSource = FetchObjectList(2)
+    Case "Change Type"
+        Me.TableName = "(Table Name)": Me.FieldName = "(Field Name)": Me.FieldType = "(Field Type)"
+        Me.TableName.RowSource = FetchObjectList(2)
+    Case "Set Property"
+        Me.TableName = "(Table Name)": Me.FieldName = "(Field Name)": Me.Constraint = "(Property)"
+        Me.TableName.RowSource = FetchObjectList(2)
+    Case "Set Relationship"
+        Me.TableName = "(PK Table Name)": Me.FieldName = "(PK Field Name)": Me.Constraint = "(Relationship Type)": Me.Misc = "(FK Table Name)": Me.Description = "(FK Field Name)"
+        Me.TableName.RowSource = FetchObjectList(2)
+    Case "Clear Relationship"
+        Me.TableName = "(Table Name)": Me.FieldName = "(Field Name)": Me.Misc = "(Table Name)": Me.Description = "(Field Name)"
+        Me.TableName.RowSource = FetchObjectList(2)
+    Case "Run Query"
+        Me.TableName = "(Query Name)"
+        Me.TableName.RowSource = FetchObjectList(3)
+    Case "Execute Code"
+        Me.TableName = "(Procedure Name)"
+    Case "Run Macro"
+        Me.TableName = "(Macro Name)"
     End Select
+    
     Exit Sub
 
 ErrorCode:
-    If Err = 2176 Then                                          'if overflow error then
+    If Err.Number = 2176 Then                           'if overflow error then
         MsgBox "WARNING. There are too many table/query names to show in the drop down field, you must enter your table/query name manually.", vbExclamation + vbOKOnly, "List Overflow for Combo Box (Access 2000 Limitation)"
     End If
-    Resume Next                                                 'continue
+    
+    Resume Next                                  'continue
 
 End Sub
+
+
 
 Private Sub btnAddNew_Click()
 
-    DoCmd.GoToRecord , , acNewRec                               'start new record and
-    Action.SetFocus                                             'move cursor to Action field
+    DoCmd.GoToRecord , , acNewRec                'start new record and
+    Me.Action.SetFocus                              'move cursor to Action field
 
 End Sub
+
+
 
 Private Sub btnClose_Click()
     DoCmd.Close
 End Sub
 
+
+
 Private Sub btnUpdate_Click()
 
-    lblOK.Visible = False                                       'hide message label (if visible)
-    RunCommand acCmdSaveRecord                                  'update ubeUpdate table
-    If UpdateBackEndFile(True) = True Then                      'change table structure in back-end file, return True if OK
-        lblOK.BackColor = 32768                                 'make label colour Green
-        lblOK.Caption = "All Updates Completed OK"              'set OK message
+    Me.lblOK.Visible = False                        'hide message label (if visible)
+    RunCommand acCmdSaveRecord                   'update ubeUpdate table
+    If UpdateBackEndFile(True) = True Then       'change table structure in back-end file, return True if OK
+        Me.lblOK.BackColor = 32768                  'make label colour Green
+        Me.lblOK.Caption = "All Updates Completed OK" 'set OK message
     Else
-        lblOK.BackColor = vbRed                                 'change label colour
-        lblOK.Caption = "Error Found on Updates"                'display error message if NOT successful
+        Me.lblOK.BackColor = vbRed                  'change label colour
+        Me.lblOK.Caption = "Error Found on Updates" 'display error message if NOT successful
     End If
-    lblOK.Visible = True                                        'display message label
-    txtLastRef = Nz(DLookup("ubeVersion", gRefTable))           'display new last Ref number
-    btnClose.SetFocus                                           'move focus to Close btn
-    ButtonCheck                                                 'enable Update button (if reqd)
+    
+    Me.lblOK.Visible = True                         'display message label
+    Me.txtLastRef = beVersion                       'display new last Ref number
+    Me.btnClose.SetFocus                            'move focus to Close btn
+    ButtonCheck                                  'enable Update button (if reqd)
 
 End Sub
 
+
+
 Private Sub Constraint_AfterUpdate()
 
-    If Action <> "Set Relationship" Then                        'if record Action NOT 'Set Relationship' then
-        Misc = ""                                               'clear Misc field
-        Description = ""                                        'and Description field
+    If Me.Action <> "Set Relationship" Then         'if record Action NOT 'Set Relationship' then
+        Me.Misc = vbNullString                      'clear Misc field
+        Me.Description = vbNullString               'and Description field
     End If
     
-    Select Case Constraint                                      'show possible parameter options when Property selected
-        Case "Text Field Size ="
-            Misc = "(1 to 255)"
-        Case "Required ="
-            Misc = "(Yes or No)"
-        Case "Allow Zero Len ="
-            Misc = "(Yes or No)"
-        Case "Validation Rule ="
-            Misc = "(Validation Rule)"
-            Description = "(Validation Text)"
-        Case "Default Value ="
-            Misc = "(Default Value)"
-        Case "New Field Name ="
-            Misc = "(New Field Name)"
-        Case "Ordinal Position ="
-            Misc = "(1 to n)"
-        Case "Description ="
-            Description = "(Field Description)"
-        Case "Set Primary Key ="
-            Misc = "(Extra Field Name/s)"
-        Case "Input Mask ="
-            Misc = "(Input Mask)"
-        Case "Format ="
-            Misc = "(Field Format)"
-        Case "Caption Name ="
-            Misc = "(Caption Name)"
-        Case "Decimal Places ="
-            Misc = "(0-15)"
-        Case "Fill With ="
-            Misc = "(Field Data)"
-        Case "Rich Text ="
-            Misc = "(Yes or No)"
-        Case "Smart Tags ="
-            Misc = "(Smart Tag ID)"
+    Select Case Me.Constraint                       'show possible parameter options when Property selected
+    Case "Text Field Size ="
+        Me.Misc = "(1 to 255)"
+    Case "Required ="
+        Me.Misc = "(Yes or No)"
+    Case "Allow Zero Len ="
+        Me.Misc = "(Yes or No)"
+    Case "Validation Rule ="
+        Me.Misc = "(Validation Rule)"
+        Me.Description = "(Validation Text)"
+    Case "Default Value ="
+        Me.Misc = "(Default Value)"
+    Case "New Field Name ="
+        Me.Misc = "(New Field Name)"
+    Case "Ordinal Position ="
+        Me.Misc = "(1 to n)"
+    Case "Description ="
+        Me.Description = "(Field Description)"
+    Case "Set Primary Key ="
+        Me.Misc = "(Extra Field Name/s)"
+    Case "Input Mask ="
+        Me.Misc = "(Input Mask)"
+    Case "Format ="
+        Me.Misc = "(Field Format)"
+    Case "Caption Name ="
+        Me.Misc = "(Caption Name)"
+    Case "Decimal Places ="
+        Me.Misc = "(0-15)"
+    Case "Fill With ="
+        Me.Misc = "(Field Data)"
+    Case "Rich Text ="
+        Me.Misc = "(Yes or No)"
+    Case "Smart Tags ="
+        Me.Misc = "(Smart Tag ID)"
     End Select
 
 End Sub
 
+
+
 Private Sub Form_AfterUpdate()
 
-'Check current record for obvious errors
-
-    If Constraint = "New Field Name =" And Nz(Misc) = "" Then MsgBox "ERROR. If you select to change the field name you must enter a name in the Misc field.", vbOKOnly, "Invalid Definition"
-    If Description = "(Field Description - Optional)" Then Description = ""
-    If Misc = "(Extra Field Name/s)" Then Misc = ""
+    On Error GoTo ErrorCode
+       
+    'Check current record for obvious errors
+    If Me.Constraint = "New Field Name =" And Nz(Me.Misc) = vbNullString Then
+        MsgBox "ERROR. If you select to change the field name you must enter a name in the Misc field.", vbOKOnly, "Invalid Definition"
+    End If
+    
+    If Me.Description = "(Field Description - Optional)" Then Me.Description = vbNullString
+    If Me.Misc = "(Extra Field Name/s)" Then Me.Misc = vbNullString
     
     'add others here (if required)
-    ButtonCheck                                                 'enable Update button (if reqd)
+    ButtonCheck                                  'enable Update button (if reqd)
+
+ErrorCode:
 
 End Sub
+
+
 
 Private Sub Form_Current()
 
     On Error GoTo ErrorCode
 
-    SetConstraintSource                                         'set Constraint options drop-down
-    txtDate = ChangeDate                                        'display record date
+    SetConstraintSource                          'set Constraint options drop-down
+    Me.txtDate = Me.ChangeDate                         'display record date
     
-    Select Case Action                                          'for Action type fill in reqd combos
-        Case "Copy Table"
-            TableName.RowSource = FetchObjectList(1)            'add local table names to TableName combo
-            FieldName.RowSource = FetchFieldList(TableName)     'add field names for selected table (if any) to field list
-        Case "Remove Table", "New Field", "Delete Field", _
-            "Change Type", "Set Property", "Set Relationship", _
-            "Clear Relationship"
-            TableName.RowSource = FetchObjectList(2)            'add linked table names to TableName combo
-            FieldName.RowSource = FetchFieldList(TableName)     'add field names for selected table (if any) to field list
-        Case "Run Query"
-            TableName.RowSource = FetchObjectList(3)            'add action query names to TableName combo
-            FieldName.RowSource = ""
-        Case Else
-            TableName.RowSource = ""                            'clear TableName combo for other types
-            FieldName.RowSource = ""                            'clear FieldName combo for other types
+    Select Case Me.Action                           'for Action type fill in reqd combos
+    Case "Copy Table"
+        Me.TableName.RowSource = FetchObjectList(1) 'add local table names to TableName combo
+        Me.FieldName.RowSource = FetchFieldList(Me.TableName) 'add field names for selected table (if any) to field list
+    Case "Remove Table", "New Field", "Delete Field", _
+         "Change Type", "Set Property", "Set Relationship", _
+         "Clear Relationship"
+        Me.TableName.RowSource = FetchObjectList(2) 'add linked table names to TableName combo
+        Me.FieldName.RowSource = FetchFieldList(Me.TableName) 'add field names for selected table (if any) to field list
+    Case "Run Query"
+        Me.TableName.RowSource = FetchObjectList(3) 'add action query names to TableName combo
+        Me.FieldName.RowSource = vbNullString
+    Case Else
+        Me.TableName.RowSource = vbNullString       'clear TableName combo for other types
+        Me.FieldName.RowSource = vbNullString       'clear FieldName combo for other types
     End Select
-    Exit Sub
 
 ErrorCode:
-    If Err = 2176 Then Resume Next                              'continue if .RowSource overflow error (A2000 only)
+    If Err.Number = 2176 Then Resume Next               'continue if .RowSource overflow error (A2000 only)
 
 End Sub
+
+
 
 Private Sub Form_Dirty(Cancel As Integer)
 
-    If Nz(Action) = "" Then Action.SetFocus                     'if Action field left blank then move cursor back
-    lblOK.Visible = False                                       'hide message label (if visible)
+    If Nz(Me.Action) = vbNullString Then Me.Action.SetFocus 'if Action field left blank then move cursor back
+    Me.lblOK.Visible = False                        'hide message label (if visible)
 
 End Sub
 
-Private Sub Form_Load()
-    OrderByOn = True
-    btnClose.SetFocus
-End Sub
 
-Private Sub Form_Open(Cancel As Integer)
-
-Dim db As DAO.Database
-Dim tdf As TableDef
-Dim vPathname As String
-Dim I As Integer
-
-    On Error GoTo ErrorCode
-
-ResumeError:
-    txtLastRef = Nz(DLookup("ubeVersion", gRefTable))                                               'display last used Ref number from Reference table
-    ButtonCheck                                                                                     'enable Update button (if reqd)
-    Exit Sub
-
-ErrorCode:
-    If Err = 3265 Or Err = 3078 Then                                                                'if table does not exist then
-        If AddReferenceTable(gRefTable) = False Then Cancel = True: Exit Sub                        'allow user to create one
-        GoTo ResumeError                                                                            'continue with other updates (if any)
-    End If
-
-End Sub
 
 Private Sub Misc_AfterUpdate()
 
-    If Constraint = "Required =" Or Constraint = "Allow Zero Len =" Or Constraint = "Rich Text =" Then  'if Constraint requires Yes or No then
-        Select Case Misc                                                                                'tidy up Yes/No values
-            Case "Yes", "Y"
-                Misc = "Yes"
-            Case "True", "T"
-                Misc = "True"
-            Case Else                                                                                   'if not Yes or True then
-                Misc = "No"                                                                             'must be No
+    If Me.Constraint = "Required =" Or Me.Constraint = "Allow Zero Len =" Or Me.Constraint = "Rich Text =" Then 'if Constraint requires Yes or No then
+        Select Case Me.Misc                         'tidy up Yes/No values
+        Case "Yes", "Y"
+            Me.Misc = "Yes"
+        Case "True", "T"
+            Me.Misc = "True"
+        Case Else                                'if not Yes or True then
+            Me.Misc = "No"                          'must be No
         End Select
     End If
 
 End Sub
 
+
+
 Private Sub TableName_AfterUpdate()
-    FieldName.RowSource = FetchFieldList(TableName)                                     'add field names for selected table (if any) to field list
+    Me.FieldName.RowSource = FetchFieldList(Me.TableName) 'add field names for selected table (if any) to field list
 End Sub
+
+
 
 Private Sub txtLastRef_AfterUpdate()
 
-'If Developer changes LastRef field manually then
-
-    CurrentDb.Execute "UPDATE [" & gRefTable & "] SET ubeVersion = " & txtLastRef       'update ubeVersion field to new value
-    lblOK.Visible = False                                                               'hide message label (if visible)
-    ButtonCheck                                                                         'and enable Update button (if reqd)
-
-End Sub
-
-Public Sub ButtonCheck()
-
-'Check if all updates have been done and enable/disable Update btn accordingly
-
-    If DMax("ID", "ubeUpdate") > Val(txtLastRef) Then btnUpdate.Enabled = True Else btnUpdate.Enabled = False   'if any outstanding updates then enable btn
+    'If Developer changes LastRef field manually then
+    
+    'update ubeVersion field to new value
+    ubeUpdateCode.beVersion = Me.txtLastRef
+    'CurrentDb.Execute "UPDATE [" & gRefTable & "] SET ubeVersion = " & txtLastRef
+    
+    Me.lblOK.Visible = False                        'hide message label (if visible)
+    ButtonCheck                                  'and enable Update button (if reqd)
 
 End Sub
 
-Public Sub SetConstraintSource()
 
-'Changes list of options in Constraint drop-down if 'Set Relationships' action selected
 
-    If Action = "Set Relationship" Then                         'if record Action = SetRelationship then
-        Constraint.RowSource = "1-1 Not Enforced;" _
-        & "1-1 Casc Updates;" _
-        & "1-1 Casc Deletes;" _
-        & "1-1 Casc Upd/Del;" _
-        & "1-n Not Enforced;" _
-        & "1-n Casc Updates;" _
-        & "1-n Casc Deletes;" _
-        & "1-n Casc Upd/Del"                                    'change Constraint options to relationship types
-    Else                                                        'if Action NOT relationship then
-        Constraint.RowSource = "Text Field Size =;" _
-        & "Format =;" _
-        & "Caption Name =;" _
-        & "Decimal Places =;" _
-        & "Input Mask =;" _
-        & "Default Value =;" _
-        & "Validation Rule =;" _
-        & "Required =;" _
-        & "Allow Zero Len =;" _
-        & "New Field Name =;" _
-        & "Ordinal Position =;" _
-        & "Description =;" _
-        & "Set Primary Key =;" _
-        & "Indexed (No);" _
-        & "Indexed (Dup OK);" _
-        & "Indexed (No Dup);" _
-        & "Set Compression;" _
-        & "Fill With =;" _
-        & "Rich Text =;" _
-        & "Smart Tags ="                                         'set Constraint options to default values
+Private Sub ButtonCheck()
+
+    'Check if all updates have been done and enable/disable Update btn accordingly
+
+    Me.btnUpdate.Enabled = Nz(DMax("ID", "ubeUpdate")) > Val(Me.txtLastRef)
+
+End Sub
+
+
+
+Private Sub SetConstraintSource()
+
+    'Changes list of options in Constraint drop-down if 'Set Relationships' action selected
+
+    If Me.Action = "Set Relationship" Then          'if record Action = SetRelationship then
+        Me.Constraint.RowSource = "1-1 Not Enforced;" _
+                             & "1-1 Casc Updates;" _
+                             & "1-1 Casc Deletes;" _
+                             & "1-1 Casc Upd/Del;" _
+                             & "1-n Not Enforced;" _
+                             & "1-n Casc Updates;" _
+                             & "1-n Casc Deletes;" _
+                             & "1-n Casc Upd/Del" 'change Constraint options to relationship types
+    Else                                         'if Action NOT relationship then
+        Me.Constraint.RowSource = "Text Field Size =;" _
+                             & "Format =;" _
+                             & "Caption Name =;" _
+                             & "Decimal Places =;" _
+                             & "Input Mask =;" _
+                             & "Default Value =;" _
+                             & "Validation Rule =;" _
+                             & "Required =;" _
+                             & "Allow Zero Len =;" _
+                             & "New Field Name =;" _
+                             & "Ordinal Position =;" _
+                             & "Description =;" _
+                             & "Set Primary Key =;" _
+                             & "Indexed (No);" _
+                             & "Indexed (Dup OK);" _
+                             & "Indexed (No Dup);" _
+                             & "Set Compression;" _
+                             & "Fill With =;" _
+                             & "Rich Text =;" _
+                             & "Smart Tags ="    'set Constraint options to default values
     End If
 
 End Sub
 
-Private Sub txtLastRef_KeyPress(KeyAscii As Integer)
-    If Chr(KeyAscii) Like "[!0-9]" And KeyAscii <> vbKeyBack Then KeyAscii = 0              'allow keys 0-9 only
-End Sub
 
-Public Function FetchObjectList(vType As Long) As String
 
-'Returns list of local tables, linked tables or action queries
-'Entry  (vType) = Type of list requested (1=Local Tables, 2=Linked tables, 3=Action Queries)
-'Exit   FetchObjectList = List of specified objects (delimited with ;)
+Private Function FetchObjectList(ByVal vType As Long) As String
 
-Dim db As DAO.Database
-Dim tdf As TableDef, qdf As QueryDef
-Dim vAttrib As String
-Dim I As Integer
+    'Returns list of local tables, linked tables or action queries
+    'Entry  (vType) = Type of list requested (1=Local Tables, 2=Linked tables, 3=Action Queries)
+    'Exit   FetchObjectList = List of specified objects (delimited with ;)
 
-    Set db = CurrentDb()
+    Dim localDB As DAO.Database
+    Dim tdf As TableDef
+    Dim qdf As QueryDef
+
+    Dim vAttrib As String
+
+    Set localDB = CurrentDb()
     Select Case vType
-        Case 1                                                                              'chk for local tables
-            For I = 0 To db.TableDefs.Count - 1
-                Set tdf = db.TableDefs(I)
-                vAttrib = (tdf.Attributes And dbSystemObject)
-                If vAttrib = 0 Then
-                    If Left(tdf.Name, 3) <> "ube" And Nz(tdf.Connect) = "" Then             'if not ube.. and not linked then
-                        FetchObjectList = FetchObjectList & tdf.Name & ";"                  'add table name to string
-                    End If
+    Case 1                                       'chk for local tables
+        For Each tdf In localDB.TableDefs
+            vAttrib = (tdf.Attributes And dbSystemObject)
+            If vAttrib = 0 Then
+                If Left$(tdf.Name, 3) <> "ube" And Nz(tdf.Connect) = vbNullString Then 'if not ube.. and not linked then
+                    FetchObjectList = FetchObjectList & tdf.Name & ";" 'add table name to string
                 End If
-            Next I
-        Case 2                                                                              'chk for linked tables
-            For I = 0 To db.TableDefs.Count - 1
-                Set tdf = db.TableDefs(I)
-                vAttrib = (tdf.Attributes And dbSystemObject)
-                If vAttrib = 0 Then
-                    If Left(tdf.Name, 3) <> "ube" And Nz(tdf.Connect) <> "" Then            'if not ube.. and is linked then
-                        FetchObjectList = FetchObjectList & tdf.Name & ";"                  'add table name to string
-                    End If
+            End If
+        Next tdf
+    Case 2                                       'chk for linked tables
+        For Each tdf In localDB.TableDefs
+            vAttrib = (tdf.Attributes And dbSystemObject)
+            If vAttrib = 0 Then
+                If Left$(tdf.Name, 3) <> "ube" And Nz(tdf.Connect) <> vbNullString Then 'if not ube.. and is linked then
+                    FetchObjectList = FetchObjectList & tdf.Name & ";" 'add table name to string
                 End If
-            Next I
-        Case 3                                                                              'chk for queries
-            For Each qdf In db.QueryDefs                                                    'for each entry in Query Definition list
-                If qdf.Type = 32 Or qdf.Type = 48 Or qdf.Type = 64 Or qdf.Type = 80 Then    'if query type = Delete/Update/Append/Make Table then
-                    FetchObjectList = FetchObjectList & qdf.Name & ";"                      'add query name to string
-                End If
-            Next qdf
+            End If
+        Next tdf
+    Case 3                                       'chk for queries
+        For Each qdf In localDB.QueryDefs             'for each entry in Query Definition list
+            If qdf.Type = 32 Or qdf.Type = 48 Or qdf.Type = 64 Or qdf.Type = 80 Then 'if query type = Delete/Update/Append/Make Table then
+                FetchObjectList = FetchObjectList & qdf.Name & ";" 'add query name to string
+            End If
+        Next qdf
     End Select
-    db.Close
-    Set db = Nothing
-    If Len(FetchObjectList) > 0 Then FetchObjectList = Left(FetchObjectList, Len(FetchObjectList) - 1)
+    
+    localDB.Close
+    Set localDB = Nothing
+    If Len(FetchObjectList) > 0 Then FetchObjectList = Left$(FetchObjectList, Len(FetchObjectList) - 1)
 
 End Function
 
-Public Function FetchFieldList(vTable As String) As String
 
-'Returns list of fields in specified table
-'Entry  (vTable) = Name of table
-'Exit   FetchFieldList = List of field names in table (delimited with ;)
+
+Private Function FetchFieldList(ByVal vTable As String) As String
+
+    'Returns list of fields in specified table
+    'Entry  (vTable) = Name of table
+    'Exit   FetchFieldList = List of field names in table (delimited with ;)
     
-Dim db As DAO.Database
-Dim tdf As DAO.TableDef
-Dim fld As DAO.Field
+    Dim localDB As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim fld As DAO.Field
     
     On Error GoTo ErrorCode
     
-    Set db = CurrentDb()
-    Set tdf = db.TableDefs(vTable)
+    Set localDB = CurrentDb()
+    Set tdf = localDB.TableDefs.Item(vTable)
     For Each fld In tdf.Fields
         FetchFieldList = FetchFieldList & fld.Name & ";"
     Next
-    If Len(FetchFieldList) > 0 Then FetchFieldList = Left(FetchFieldList, Len(FetchFieldList) - 1)
+    
+    If Len(FetchFieldList) > 0 Then FetchFieldList = Left$(FetchFieldList, Len(FetchFieldList) - 1)
     Set fld = Nothing
     Set tdf = Nothing
-    Set db = Nothing
+    Set localDB = Nothing
+    
     Exit Function
 
 ErrorCode:
-    If Err = 3265 Then
-        Set db = Nothing
-        Exit Function                        'if table does not exist then exit with ""
+    If Err.Number = 3265 Then
+        Set localDB = Nothing
+        ' if table does not exist then exit with ""
     Else
         MsgBox Err.Description
     End If
