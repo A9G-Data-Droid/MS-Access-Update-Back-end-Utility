@@ -13,8 +13,8 @@ Begin Form
     Width =14193
     DatasheetFontHeight =10
     ItemSuffix =25
-    Right =16485
-    Bottom =11010
+    Right =22635
+    Bottom =13680
     DatasheetGridlinesColor =12632256
     OrderBy ="ID"
     RecSrcDt = Begin
@@ -395,10 +395,10 @@ Begin Form
                     OnClick ="[Event Procedure]"
                     ControlTipText ="Close form"
 
-                    WebImagePaddingLeft =4
-                    WebImagePaddingTop =4
-                    WebImagePaddingRight =3
-                    WebImagePaddingBottom =3
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
                 End
                 Begin CommandButton
                     OverlapFlags =85
@@ -412,10 +412,10 @@ Begin Form
                     OnClick ="[Event Procedure]"
                     ControlTipText ="Update back-end file with new data"
 
-                    WebImagePaddingLeft =4
-                    WebImagePaddingTop =4
-                    WebImagePaddingRight =3
-                    WebImagePaddingBottom =3
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
                 End
                 Begin CommandButton
                     OverlapFlags =85
@@ -429,10 +429,10 @@ Begin Form
                     OnClick ="[Event Procedure]"
                     ControlTipText ="Add new object or instruction to list"
 
-                    WebImagePaddingLeft =4
-                    WebImagePaddingTop =4
-                    WebImagePaddingRight =3
-                    WebImagePaddingBottom =3
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
                 End
                 Begin Label
                     OverlapFlags =85
@@ -509,7 +509,7 @@ End Sub
 
 
 
-'@Ignore ProcedureCanBeWrittenAsFunction
+'@Ignore IntegerDataType, ProcedureCanBeWrittenAsFunction
 Private Sub txtLastRef_KeyPress(ByRef KeyAscii As Integer)
     If Chr$(KeyAscii) Like "[!0-9]" And KeyAscii <> vbKeyBack Then KeyAscii = 0 'allow keys 0-9 only
 End Sub
@@ -807,37 +807,37 @@ End Sub
 Private Function FetchObjectList(ByVal vType As Long) As String
 
     Dim localDB As DAO.Database
-    Dim tdf As TableDef
-    Dim qdf As QueryDef
+    Dim theTable As TableDef
+    Dim theQuery As QueryDef
 
     Dim vAttrib As String
 
     Set localDB = CurrentDb()
     Select Case vType
     Case 1                                       'chk for local tables
-        For Each tdf In localDB.TableDefs
-            vAttrib = (tdf.Attributes And dbSystemObject)
+        For Each theTable In localDB.TableDefs
+            vAttrib = (theTable.Attributes And dbSystemObject)
             If vAttrib = 0 Then
-                If Left$(tdf.Name, 3) <> "ube" And Nz(tdf.Connect) = vbNullString Then 'if not ube.. and not linked then
-                    FetchObjectList = FetchObjectList & tdf.Name & ";" 'add table name to string
+                If Left$(theTable.Name, 3) <> "ube" And Nz(theTable.Connect) = vbNullString Then 'if not ube.. and not linked then
+                    FetchObjectList = FetchObjectList & theTable.Name & ";" 'add table name to string
                 End If
             End If
-        Next tdf
+        Next theTable
     Case 2                                       'chk for linked tables
-        For Each tdf In localDB.TableDefs
-            vAttrib = (tdf.Attributes And dbSystemObject)
+        For Each theTable In localDB.TableDefs
+            vAttrib = (theTable.Attributes And dbSystemObject)
             If vAttrib = 0 Then
-                If Left$(tdf.Name, 3) <> "ube" And Nz(tdf.Connect) <> vbNullString Then 'if not ube.. and is linked then
-                    FetchObjectList = FetchObjectList & tdf.Name & ";" 'add table name to string
+                If Left$(theTable.Name, 3) <> "ube" And Nz(theTable.Connect) <> vbNullString Then 'if not ube.. and is linked then
+                    FetchObjectList = FetchObjectList & theTable.Name & ";" 'add table name to string
                 End If
             End If
-        Next tdf
+        Next theTable
     Case 3                                       'chk for queries
-        For Each qdf In localDB.QueryDefs             'for each entry in Query Definition list
-            If qdf.Type = 32 Or qdf.Type = 48 Or qdf.Type = 64 Or qdf.Type = 80 Then 'if query type = Delete/Update/Append/Make Table then
-                FetchObjectList = FetchObjectList & qdf.Name & ";" 'add query name to string
+        For Each theQuery In localDB.QueryDefs             'for each entry in Query Definition list
+            If theQuery.Type = 32 Or theQuery.Type = 48 Or theQuery.Type = 64 Or theQuery.Type = 80 Then 'if query type = Delete/Update/Append/Make Table then
+                FetchObjectList = FetchObjectList & theQuery.Name & ";" 'add query name to string
             End If
-        Next qdf
+        Next theQuery
     End Select
     
     localDB.Close
@@ -850,30 +850,27 @@ End Function
 '''Returns list of fields in specified table
 '''Entry  (vTable) = Name of table
 '''Exit   FetchFieldList = List of field names in table ( delimited with ; )
-Private Function FetchFieldList(ByVal vTable As String) As String
+Private Function FetchFieldList(ByVal TableName As String) As String
    
-    Dim localDB As DAO.Database
-    Dim tdf As DAO.TableDef
-    Dim fld As DAO.Field
+    Dim theField As DAO.Field
     
     On Error GoTo ErrorCode
     
-    Set localDB = CurrentDb()
-    Set tdf = localDB.TableDefs.Item(vTable)
-    For Each fld In tdf.Fields
-        FetchFieldList = FetchFieldList & fld.Name & ";"
-    Next
+    With CurrentDb.TableDefs.Item(TableName)
+        For Each theField In .Fields
+            FetchFieldList = FetchFieldList & theField.Name & ";"
+        Next
+        
+        Set theField = Nothing
+    End With
     
     If Len(FetchFieldList) > 0 Then FetchFieldList = Left$(FetchFieldList, Len(FetchFieldList) - 1)
-    Set fld = Nothing
-    Set tdf = Nothing
-    Set localDB = Nothing
-    
+   
     Exit Function
 
 ErrorCode:
     If Err.Number = 3265 Then
-        Set localDB = Nothing
+        Set theField = Nothing
         ' if table does not exist then exit with ""
     ElseIf Err.Number <> 0 Then
         MsgBox Err.Description, vbCritical, "ERROR: " & Err.Number

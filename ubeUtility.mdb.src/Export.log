@@ -3,7 +3,7 @@ Beginning Export of all Source
 ubeUtility.mdb
 VCS Version 3.1.33
 Using Fast Save
-6/2/2020 10:25:50 AM
+6/2/2020 11:06:27 AM
 -------------------------------------
 -------------------------------------
 Exporting VB project...         ubeUtility
@@ -25,22 +25,18 @@ No imex specs found in this database.
 Exporting db properties...      Database Properties (DAO)
 [51]
 -------------------------------------
-Exporting tables...             ubeUpdate
-  ubeUpdate (SQL)
+Exporting tables...             (Skipping 'ubeUpdate')
 [1]
 -------------------------------------
 No queries found in this database.
 -------------------------------------
 Exporting forms...              ubeForm
     Sanitized in 0.07 seconds.
-  ubeUpdating
-    Sanitized in 0.04 seconds.
+  (Skipping 'ubeUpdating')
 [2]
 -------------------------------------
-Exporting macros...             AutoKeys
-    Sanitized in 0.03 seconds.
+Exporting macros...             (Skipping 'AutoKeys')
 [1]
-  Removing orphaned file: modVersionControl.bas
 -------------------------------------
 Exporting modules...            ubeUpdateCode
 [1]
@@ -59,4 +55,4 @@ Exporting doc properties...     Database Documents
 Exporting nav pane groups...    Groups
 [1]
 -------------------------------------
-Done. (0.93 seconds)
+Done. (0.61 seconds)
