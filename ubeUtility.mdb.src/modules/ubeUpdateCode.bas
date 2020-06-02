@@ -209,7 +209,7 @@ Private Function SchemaUpdate(ByVal vVersion As Long, ByVal vDeveloper As Boolea
     Do Until updateList.EOF                             'step thru list
         vID = updateList.Fields().Item("ID").Value                             'fetch ID for error message
         
-        DoCmd.openForm "ubeUpdating"             'show Updating Back End message
+        DoCmd.OpenForm "ubeUpdating"             'show Updating Back End message
         With Forms.Item("ubeUpdating").Controls
             .Item("ShowFileName").Caption = backendDB.Name
             .Item("WaitLabel").Caption = "Step " & vID

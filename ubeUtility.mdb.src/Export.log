@@ -1,51 +1,62 @@
--------------------------------
+-------------------------------------
 Beginning Export of all Source
-ubeUtility V2-0.mdb
-VCS Version 1.2.0.19
-3/31/2020 10:30:53 AM
--------------------------------
-Exporting queries...    
-[0]
--------------------------------
-Exporting forms...      
+ubeUtility.mdb
+VCS Version 3.1.33
+Using Fast Save
+6/2/2020 10:25:50 AM
+-------------------------------------
+-------------------------------------
+Exporting VB project...         ubeUtility
+[1]
+-------------------------------------
+Exporting vbe references...     stdole
+[2]
+-------------------------------------
+No vbe forms found in this database.
+-------------------------------------
+No proj properties found in this database.
+-------------------------------------
+No saved specs found in this database.
+-------------------------------------
+No shared images found in this database.
+-------------------------------------
+No imex specs found in this database.
+-------------------------------------
+Exporting db properties...      Database Properties (DAO)
+[51]
+-------------------------------------
+Exporting tables...             ubeUpdate
+  ubeUpdate (SQL)
+[1]
+-------------------------------------
+No queries found in this database.
+-------------------------------------
+Exporting forms...              ubeForm
+    Sanitized in 0.07 seconds.
   ubeUpdating
-    Sanitized in 0.02 seconds.
-  ubeForm
-    Sanitized in 0.05 seconds.
+    Sanitized in 0.04 seconds.
 [2]
--------------------------------
-Exporting reports...    
-[0]
--------------------------------
-Exporting macros...     
-  AutoKeys
-    Sanitized in 0.01 seconds.
+-------------------------------------
+Exporting macros...             AutoKeys
+    Sanitized in 0.03 seconds.
 [1]
--------------------------------
-Exporting modules...    
-  ubeUpdateCode
-  modVersionControl
+  Removing orphaned file: modVersionControl.bas
+-------------------------------------
+Exporting modules...            ubeUpdateCode
+[1]
+-------------------------------------
+No reports found in this database.
+-------------------------------------
+No table data found in this database.
+-------------------------------------
+No table data macros found in this database.
+-------------------------------------
+No relations found in this database.
+-------------------------------------
+Exporting doc properties...     Database Documents
 [2]
--------------------------------
-Exporting references... 
-  VBA 4.2
-  Access 9.0
-  DAO 12.0
-  [MSAccessVCS]
-[4]
--------------------------------
-Exporting properties... 
-[20]
--------------------------------
-Exporting specs...      
-[0]
--------------------------------
-Exporting tbldef...     
-  ubeUpdate (with SQL)
-  ubeUpdate
+-------------------------------------
+Exporting nav pane groups...    Groups
 [1]
--------------------------------
-Exporting relations...  
-[0]
--------------------------------
-Done. (0.74 seconds)
+-------------------------------------
+Done. (0.93 seconds)

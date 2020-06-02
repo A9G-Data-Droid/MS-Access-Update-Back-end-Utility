@@ -1,4 +1,6 @@
 /Archive/
 *.mdb
 *.accda
+*.laccdb
 *.doc
+*.7z

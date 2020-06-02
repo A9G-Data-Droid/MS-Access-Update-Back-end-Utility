@@ -1,0 +1,17 @@
+{
+  "Info": {
+    "Class": "clsDbVbeProject",
+    "Description": "VBE Project",
+    "VCS Version": "3.1.33"
+  },
+  "Items": {
+    "Name": "ubeUtility",
+    "Description": "",
+    "FileName": "rel:ubeUtility.mdb",
+    "HelpFile": "87380012",
+    "HelpContextId": 0,
+    "Mode": 0,
+    "Protection": 0,
+    "Type": 100
+  }
+}
